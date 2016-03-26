@@ -30,7 +30,7 @@ class OAuth:
 	client_uri = None
 	usermeta_variable_mapping = {'username': 'username', 'is_admin': 'is_admin', 'email': 'email', 'fullname': 'name'}
 	
-	def __init__(self, oauth_provider_uri = None, oauth_authorize_path = None, oauth_token_path = None, oauth_user_path = None, oauth_revoke_path = None, oauth_client_id = None, oauth_client_secret = None, client_signin_uri = None, client_callback_uri = None, client_uri = None):
+	def __init__(self, oauth_provider_uri = None, oauth_authorize_path = None, oauth_token_path = None, oauth_user_path = None, oauth_revoke_path = None, oauth_client_id = None, oauth_client_secret = None, client_signin_uri = None, client_callback_uri = None, client_uri = None, usermeta_variable_mapping = None):
 		params = locals()
 		self.__set_attrs(params)
 	
@@ -62,7 +62,7 @@ class OAuth:
 	def authorize(self):
 		try:
 			access_token = request.cookies.get('access_token')
-			user = self.check_access(access_token)
+			user = self.validate_token(access_token)
 		except:
 			user = None
 		if not user or not user.username:
@@ -71,7 +71,7 @@ class OAuth:
 			return redirect(self.client_uri, 301)
 	
 
-	def check_access(self, access_token):
+	def validate_token(self, access_token):
 		r = requests.get(self.oauth_user_path+"?access_token="+access_token, headers= {'Accept':'application/json'}, verify=True)
 		r = r.json()
 		logger.info("\tOAuth User Meta\n" + json.dumps(r, indent=4))
@@ -88,7 +88,7 @@ class OAuth:
 
 	def is_oauth_session(self):
 		try:
-			u = self.check_access(request.cookies.get('access_token'))
+			u = self.validate_token(request.cookies.get('access_token'))
 		except:
 			u = None
 		if not u or not u.username:
@@ -100,7 +100,7 @@ class OAuth:
 		r = requests.post(self.oauth_token_path, headers={ 'Host': self.oauth_provider_uri.replace("https://", ""), 'Accept': 'application/json' }, data={'code': request.args.get('code'), 'client_id': self.oauth_client_id, 'client_secret': self.oauth_client_secret, 'redirect_uri': self.client_callback_uri, 'grant_type': 'authorization_code'}, verify=True )
 		r = r.json()
 		try:
-			user = self.check_access(r['access_token'])
+			user = self.validate_token(r['access_token'])
 		except:
 			user = None
 		if not user:
