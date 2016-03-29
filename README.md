@@ -6,7 +6,7 @@ NAME
     oauth_flask
 
 FILE
-    oauth/oauth_flask.py
+    /home/swinkelhofer/Dropbox/Linux/Documents/gitlab-oauth/oauth/oauth_flask.py
 
 CLASSES
     OAuth
@@ -15,7 +15,7 @@ CLASSES
     class OAuth
      |  Methods defined here:
      |  
-     |  __init__(self, oauth_provider_uri=None, oauth_authorize_path=None, oauth_token_path=None, oauth_user_path=None, oauth_revoke_path=None, oauth_client_id=None, oauth_client_secret=None, client_signin_uri=None, client_callback_uri=None, client_uri=None, usermeta_variable_mapping=None)
+     |  __init__(self, oauth_provider_uri=None, oauth_authorize_path=None, oauth_token_path=None, oauth_user_path=None, oauth_revoke_path=None, oauth_client_id=None, oauth_client_secret=None, client_signin_uri=None, client_signout_uri=None, client_callback_uri=None, client_uri=None, usermeta_variable_mapping=None)
      |  
      |  authorize(self)
      |  
@@ -39,6 +39,8 @@ CLASSES
      |  client_callback_uri = None
      |  
      |  client_signin_uri = None
+     |  
+     |  client_signout_uri = None
      |  
      |  client_uri = None
      |  
@@ -70,6 +72,9 @@ CLASSES
      |  is_admin = False
      |  
      |  username = None
+
+FUNCTIONS
+    multi_oauth(oauth_handlers)
 
 DATA
     logger = <logging.Logger object>
