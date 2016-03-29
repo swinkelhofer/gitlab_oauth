@@ -6,7 +6,7 @@ NAME
     oauth_flask
 
 FILE
-    /home/swinkelhofer/Dropbox/Linux/Documents/gitlab-oauth/oauth/oauth_flask.py
+    /oauth/oauth_flask.py
 
 CLASSES
     OAuth
