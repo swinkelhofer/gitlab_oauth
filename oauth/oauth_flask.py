@@ -4,6 +4,8 @@ from functools import wraps
 import json
 import sys
 import logging
+import random
+import string
 
 logging.getLogger('requests').setLevel(logging.WARNING)
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
@@ -26,11 +28,12 @@ class OAuth:
 	oauth_client_id = None
 	oauth_client_secret = None
 	client_signin_uri = None
+	client_signout_uri = None
 	client_callback_uri = None
 	client_uri = None
 	usermeta_variable_mapping = {'username': 'username', 'is_admin': 'is_admin', 'email': 'email', 'fullname': 'name'}
 	
-	def __init__(self, oauth_provider_uri = None, oauth_authorize_path = None, oauth_token_path = None, oauth_user_path = None, oauth_revoke_path = None, oauth_client_id = None, oauth_client_secret = None, client_signin_uri = None, client_callback_uri = None, client_uri = None, usermeta_variable_mapping = None):
+	def __init__(self, oauth_provider_uri = None, oauth_authorize_path = None, oauth_token_path = None, oauth_user_path = None, oauth_revoke_path = None, oauth_client_id = None, oauth_client_secret = None, client_signin_uri = None, client_signout_uri = None, client_callback_uri = None, client_uri = None, usermeta_variable_mapping = None):
 		params = locals()
 		self.__set_attrs(params)
 	
@@ -120,6 +123,7 @@ class OAuth:
 			resp.set_cookie('login', user.username)
 			resp.set_cookie('email', user.email)
 			resp.set_cookie('fullname', user.fullname)
+			resp.set_cookie('logout_uri', self.client_signout_uri)
 			return resp
 
 	def revoke_token(self):
@@ -133,6 +137,7 @@ class OAuth:
 		resp.set_cookie('login', expires=0)
 		resp.set_cookie('email', expires=0)
 		resp.set_cookie('fullname', expires=0)
+		resp.set_cookie('logout_uri', expires=0)
 		return resp
 
 	def default_routes(self, sign_in = "/sign_in", sign_out = "/sign_out", get_token = "/get_token", app = None):
@@ -142,17 +147,22 @@ class OAuth:
 		else:
 			self.client_callback_uri = self.client_uri + get_token
 			self.client_signin_uri = self.client_uri + sign_in
-			@app.route(sign_in)
+			self.client_signout_uri = self.client_uri + sign_out
+			randstring = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(8)) 
+			# @app.route(sign_in)
 			def _sign_in():
 				return self.authorize()
-			@app.route(sign_out)
+			# @app.route(sign_out)
 			@self.protect()
 			def _sign_out():
 				return self.revoke_token()
-			@app.route(get_token)
+			# @app.route(get_token)
 			def _get_token():
 				return self.retrieve_token()
-
+			app.add_url_rule(sign_in, '_sign_in'+randstring, _sign_in)
+			app.add_url_rule(sign_out, '_sign_out'+randstring, _sign_out)
+			app.add_url_rule(get_token, '_get_token'+randstring, _get_token)
+ 
 	def protect(self):
 		def __protect(function):
 			@wraps(function)
@@ -167,3 +177,15 @@ class OAuth:
 			return wrapper
 		return __protect
 
+def multi_oauth(oauth_handlers):
+	def __multi_oauth(function):
+		def __wrapper(*args, **kwargs):
+			for handler in oauth_handlers:
+				try:
+					if handler.is_oauth_session():
+						return function(*args, **kwargs)
+				except:
+					continue
+			return redirect('/', 301)
+		return __wrapper
+	return __multi_oauth

@@ -5,31 +5,50 @@ VERSION = '0.0.1'
 app = Flask(__name__)
 
 d = {}
-d['oauth_client_id'] = 'client_idXXX'
-d['oauth_client_secret'] = 'client_secretXXX'
+d['oauth_client_id'] = 'gitlabclient_idXXX'
+d['oauth_client_secret'] = 'gitlabclient_secretXXX'
 d['client_uri'] = 'http://example.com'
 
 oauth = OAuth(**d)
 oauth.load_defaults(provider="gitlab", provider_uri="https://git.example.com")
-# oauth.load_defaults(provider="github")
 oauth.default_routes(sign_in = "/sign_in", sign_out = "/logout", get_token = "/auth", app = app)
+
+
+d2 = {}
+d2['oauth_client_id'] = 'githubclient_idXXX'
+d2['oauth_client_secret'] = 'githubclient_idXXX'
+d2['client_uri'] = 'http://example.com'
+
+oauth2 = OAuth(**d2)
+oauth2.load_defaults(provider="github")
+oauth2.default_routes(sign_in = "/sign_in2", app=app)
+# Attention!!!! default rules for multiple OAuth Instances cannot have same name
+
 
 @app.route("/")
 def init():
-	if oauth.is_oauth_session() == False:
+	if oauth.is_oauth_session() == False and oauth2.is_oauth_session() == False:
 		return render_template('signin.html')
 	return "Logged in as "+request.cookies.get('login')
-# cookies: login, fullname, email
+# cookies: login, fullname, email, logout_uri
+# logout_uri is used to determine which sign_out-Route to call
 
-@app.route("/test")
 @oauth.protect()
-def test():
-	return "Save"
+@app.route("/gitlab")
+def gitlab():
+	return "Only access from GitLab Sign-On"
 
-@app.route("/apple")
-@oauth.protect()
-def apple():
-	return "apple"
+@oauth2.protect()
+@app.route("/github")
+def github():
+	return "Only access from GitHub Sign-On"
+
+@multi_oauth([oauth, oauth2])
+@app.route("/access_for_all")
+def all()÷
+    return "Access for all OAuth Provider Sign-Ons"
+
+
 
 if __name__ == '__main__':
 	app.run(host='127.0.0.1', port=5000)
