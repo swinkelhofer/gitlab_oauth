@@ -7,14 +7,11 @@ app = Flask(__name__)
 d = {}
 d['oauth_client_id'] = 'client_idXXX'
 d['oauth_client_secret'] = 'client_secretXXX'
-d['client_signin_uri'] = 'http://example.com/sign_in'
-d['client_signin_uri'] = 'http://example.com/sign_in'
-d['client_callback_uri'] = 'http://example.com/auth'
 d['client_uri'] = 'http://example.com'
 
 oauth = OAuth(**d)
-# oauth.load_defaults(provider="gitlab", provider_uri="https://git.example.com")
-oauth.load_defaults(provider="github")
+oauth.load_defaults(provider="gitlab", provider_uri="https://git.example.com")
+# oauth.load_defaults(provider="github")
 oauth.default_routes(sign_in = "/sign_in", sign_out = "/logout", get_token = "/auth", app = app)
 
 @app.route("/")
@@ -22,6 +19,7 @@ def init():
 	if oauth.is_oauth_session() == False:
 		return render_template('signin.html')
 	return "Logged in as "+request.cookies.get('login')
+# cookies: login, fullname, email
 
 @app.route("/test")
 @oauth.protect()

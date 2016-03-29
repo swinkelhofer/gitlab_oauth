@@ -140,6 +140,8 @@ class OAuth:
 			logger.warning("You have to specify at least the flask app")
 			sys.exit(1)
 		else:
+			self.client_callback_uri = self.client_uri + get_token
+			self.client_signin_uri = self.client_uri + sign_in
 			@app.route(sign_in)
 			def _sign_in():
 				return self.authorize()
