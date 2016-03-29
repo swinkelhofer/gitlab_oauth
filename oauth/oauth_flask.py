@@ -57,6 +57,15 @@ class OAuth:
 			self.oauth_revoke_path = 'https://github.com/login/oauth/revoke'			
 			self.oauth_user_path = 'https://api.github.com/user'
 			self.usermeta_variable_mapping = {'username': 'login', 'is_admin': 'site_admin', 'fullname': 'name', 'email': 'email'}
+		elif provider == "bitbucket":
+			provider_uri = 'https://bitbucket.org'
+			self.oauth_provider_uri = provider_uri
+			self.oauth_authorize_path = provider_uri+'/site/oauth2/authorize'
+			self.oauth_token_path = provider_uri+'/site/oauth2/access_token'
+			self.oauth_user_path = provider_uri+'/api/1.0/oauth/authenticate'
+			self.oauth_revoke_path = provider_uri+'/site/oauth2/revoke'
+			self.usermeta_variable_mapping = {'username': 'login', 'is_admin': 'site_admin', 'fullname': 'name', 'email': 'email'}
+
 
 		
 	def authorize(self):
