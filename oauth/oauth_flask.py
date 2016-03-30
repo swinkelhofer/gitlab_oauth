@@ -83,17 +83,20 @@ class OAuth:
 			return redirect(self.client_uri, 301)
 	
 
-	def validate_token(self, access_token):
+	def validate_token(self, access_token, role="all"):
 		r = requests.get(self.oauth_user_path+"?access_token="+access_token, headers= {'Accept':'application/json'}, verify=True)
 		r = r.json()
 		logger.info("\tOAuth User Meta\n" + json.dumps(r, indent=4))
 		try:
-			u = User()
-			u.username = r[self.usermeta_variable_mapping['username']]
-			u.is_admin = r[self.usermeta_variable_mapping['is_admin']]
-			u.email = r[self.usermeta_variable_mapping['email']]
-			u.fullname = r[self.usermeta_variable_mapping['fullname']]
-			u.cookie = access_token
+			if (role == 'admin' and r[self.usermeta_variable_mapping['is_admin']] == True) or (role == "all" and not r[self.usermeta_variable_mapping['is_admin']]):
+				u = User()
+				u.username = r[self.usermeta_variable_mapping['username']]
+				u.is_admin = r[self.usermeta_variable_mapping['is_admin']]
+				u.email = r[self.usermeta_variable_mapping['email']]
+				u.fullname = r[self.usermeta_variable_mapping['fullname']]
+				u.cookie = access_token
+			else:
+				u = None
 		except:
 			u = None
 		return u
@@ -108,15 +111,16 @@ class OAuth:
 		else:
 			return True
 
-	def retrieve_token(self):
+	def retrieve_token(self, role='all'):
 		r = requests.post(self.oauth_token_path, headers={ 'Host': self.oauth_provider_uri.replace("https://", ""), 'Accept': 'application/json' }, data={'code': request.args.get('code'), 'client_id': self.oauth_client_id, 'client_secret': self.oauth_client_secret, 'redirect_uri': self.client_callback_uri, 'grant_type': 'authorization_code'}, verify=True )
 		r = r.json()
 		try:
-			user = self.validate_token(r['access_token'])
+			user = self.validate_token(r['access_token'], role=role)
 		except:
 			user = None
-		if not user:
-			return redirect(self.oauth_authorize_path+"?client_id="+self.oauth_client_id+"&redirect_uri="+self.client_callback_uri+"&response_type=code", 301)
+		if not user or not user.username:
+			# return redirect(self.oauth_authorize_path+"?client_id="+self.oauth_client_id+"&redirect_uri="+self.client_callback_uri+"&response_type=code", 301)
+			return redirect(self.client_uri, 301)
 		else:
 			resp = make_response(redirect(self.client_signin_uri, 301))
 			resp.set_cookie('access_token', r['access_token'])
@@ -140,7 +144,7 @@ class OAuth:
 		resp.set_cookie('logout_uri', expires=0)
 		return resp
 
-	def default_routes(self, sign_in = "/sign_in", sign_out = "/sign_out", get_token = "/get_token", app = None):
+	def default_routes(self, sign_in = "/sign_in", sign_out = "/sign_out", get_token = "/get_token", app = None, role='all'):
 		if not app:
 			logger.warning("You have to specify at least the flask app")
 			sys.exit(1)
@@ -158,7 +162,7 @@ class OAuth:
 				return self.revoke_token()
 			# @app.route(get_token)
 			def _get_token():
-				return self.retrieve_token()
+				return self.retrieve_token(role=role)
 			app.add_url_rule(sign_in, '_sign_in'+randstring, _sign_in)
 			app.add_url_rule(sign_out, '_sign_out'+randstring, _sign_out)
 			app.add_url_rule(get_token, '_get_token'+randstring, _get_token)
@@ -171,9 +175,9 @@ class OAuth:
 					u = handler.validate_token(request.cookies.get('access_token'))
 				except:
 					u = User()
-				if role == 'admin' and u.is_admin == True:
+				if u and role == 'admin' and u.is_admin == True:
 					return function(*args, **kwargs)
-				elif role == 'all' and u.is_admin != None:
+				elif u and role == 'all' and u.is_admin != None:
 					return function(*args, **kwargs)
 				else:
 					return redirect(self.client_uri, 301)
@@ -189,9 +193,9 @@ def multi_oauth(oauth_handlers, role="all"):
 					u = handler.validate_token(request.cookies.get('access_token'))
 				except:
 					u = User()
-				if role == 'admin' and u.is_admin == True:
+				if u and role == 'admin' and u.is_admin == True:
 					return function(*args, **kwargs)
-				elif role == 'all' and u.is_admin != None:
+				elif u and role == 'all' and u.is_admin != None:
 					return function(*args, **kwargs)
 				else:
 					return redirect('/', 301)
