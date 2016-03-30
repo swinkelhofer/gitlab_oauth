@@ -163,29 +163,37 @@ class OAuth:
 			app.add_url_rule(sign_out, '_sign_out'+randstring, _sign_out)
 			app.add_url_rule(get_token, '_get_token'+randstring, _get_token)
  
-	def protect(self):
+	def protect(self, role="all"):
 		def __protect(function):
 			@wraps(function)
 			def wrapper(*args, **kwargs):
 				try:
-					if self.is_oauth_session():
-						return function(*args, **kwargs)
-					else:
-						return redirect(self.client_uri, 301)
+					u = handler.validate_token(request.cookies.get('access_token'))
 				except:
+					u = User()
+				if role == 'admin' and u.is_admin == True:
+					return function(*args, **kwargs)
+				elif role == 'all' and u.is_admin != None:
+					return function(*args, **kwargs)
+				else:
 					return redirect(self.client_uri, 301)
 			return wrapper
 		return __protect
 
-def multi_oauth(oauth_handlers):
+def multi_oauth(oauth_handlers, role="all"):
 	def __multi_oauth(function):
+		@wraps(function)
 		def __wrapper(*args, **kwargs):
 			for handler in oauth_handlers:
 				try:
-					if handler.is_oauth_session():
-						return function(*args, **kwargs)
+					u = handler.validate_token(request.cookies.get('access_token'))
 				except:
-					continue
-			return redirect('/', 301)
+					u = User()
+				if role == 'admin' and u.is_admin == True:
+					return function(*args, **kwargs)
+				elif role == 'all' and u.is_admin != None:
+					return function(*args, **kwargs)
+				else:
+					return redirect('/', 301)
 		return __wrapper
 	return __multi_oauth

@@ -33,18 +33,18 @@ def init():
 # cookies: login, fullname, email, logout_uri
 # logout_uri is used to determine which sign_out-Route to call
 
-@oauth.protect()
 @app.route("/gitlab")
+@oauth.protect()
 def gitlab():
 	return "Only access from GitLab Sign-On"
 
+@app.route("/github", role="admin") # Only access for admins, default role="all"
 @oauth2.protect()
-@app.route("/github")
 def github():
 	return "Only access from GitHub Sign-On"
 
-@multi_oauth([oauth, oauth2])
 @app.route("/access_for_all")
+@multi_oauth([oauth, oauth2], role="admin") # Only access for admins
 def all()÷
     return "Access for all OAuth Provider Sign-Ons"
 
