@@ -16,5 +16,5 @@ pycparser==2.14
 requests==2.9.1
 simplejson==3.8.2
 six==1.10.0
-urllib3==1.14
+urllib3==1.26.5
 wsgiref==0.1.2
